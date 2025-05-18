@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osteoarthritis Comorbidity Predictor</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --primary-dark: #3367d6;
+            --secondary-color: #34a853;
+            --dark-bg: #121212;
+            --card-bg: #1e1e24;
+            --text-color: #ffffff;
+            --border-radius: 10px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .video-container video {
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 10px rgba(66, 133, 244, 0.3);
+        }
+
+        .card {
+            background-color: rgba(30, 30, 36, 0.6);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: calc(var(--border-radius) / 2);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+
+        .button-container {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            border-radius: calc(var(--border-radius) / 2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(66, 133, 244, 0.4);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        #result {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            font-size: 1.2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            display: none;
+        }
+
+        #result.show {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+
+        .info-text {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .input-with-info {
+            position: relative;
+        }
+
+        .input-info {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 18px;
+            height: 18px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: help;
+        }
+
+        .input-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 200px;
+            display: none;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .input-info:hover .input-tooltip {
+            display: block;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .card {
+                padding: 1.2rem;
+            }
+            
+            input {
+                padding: 0.7rem;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <!-- Replace with your video file path -->
+        <video autoplay muted loop playsinline id="bgVideo">
+            <source src="/static/med.mp4" type="video/mp4">
+        </video>
+    </div>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <h1>Osteoarthritis Comorbidity Predictor</h1>
+        
+        <div class="card">
+            <form id="predictionForm">
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bmi">BMI</label>
+                    <input type="number" step="0.1" id="bmi" name="bmi" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="oa_severity">OA Severity (1-4)</label>
+                    <input type="number" id="oa_severity" name="oa_severity" min="0" max="4" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="activity">Activity Level</label>
+                    <input type="number" id="activity" name="activity" min="0" max="2" required>
+                    <div class="info-text">0=low, 1=medium, 2=high</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="smoking">Smoking</label>
+                    <input type="number" id="smoking" name="smoking" min="0" max="1" required>
+                    <div class="info-text">0=No, 1=Yes</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pain_score">Pain Score (1–10)</label>
+                    <input type="number" id="pain_score" name="pain_score" step="0.1" min="1" max="10" required>
+                </div>
+                
+                <div class="button-container">
+                    <button type="submit">Predict Comorbidity</button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="result" class="card"></div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const resultElement = document.getElementById('result');
+    resultElement.innerHTML = 'Processing...';
+    resultElement.classList.add('show');
+    resultElement.style.backgroundColor = '';  // Reset background color in case of previous error
+
+    try {
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Convert all form values to numbers
+        for (let key in data) {
+            data[key] = Number(data[key]);
+        }
+
+        const res = await fetch('/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!res.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const result = await res.json();
+
+        let notesHtml = '';
+        if (result.clinical_notes && result.clinical_notes.length > 0) {
+            notesHtml = `<br><strong>Clinical Notes:</strong><ul>` +
+                result.clinical_notes.map(note => `<li>${note}</li>`).join('') +
+                `</ul>`;
+        } else {
+            notesHtml = '<br><strong>Clinical Notes:</strong> None';
+        }
+
+        resultElement.innerHTML = `
+            <strong>Predicted Comorbidity:</strong> ${result.comorbidity}
+            ${notesHtml}
+        `;
+    } catch (error) {
+        resultElement.innerHTML = 'Error: Could not process prediction. Please try again.';
+        resultElement.style.backgroundColor = '#d32f2f'; // red error background
+    }
+});
+
+// Handle video background load error and fallback
+const bgVideo = document.getElementById('bgVideo');
+if (bgVideo) {
+    bgVideo.addEventListener('error', function() {
+        console.log('Video failed to load. Using fallback background.');
+        document.body.style.backgroundImage = 'linear-gradient(135deg, #1a237e, #0d47a1)';
+    });
+}
+    </script>
+</body>
+</html>
